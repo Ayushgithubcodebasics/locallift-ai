@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Boss Command Center{% endblock %} · {{ config.AGENCY_NAME }}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  .badge{padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;white-space:nowrap}
+  .s-Queued{background:#e0e7ff;color:#3730a3}.s-InProgress{background:#fef3c7;color:#92400e}
+  .s-Blocked{background:#fee2e2;color:#991b1b}.s-Completed{background:#dcfce7;color:#166534}
+  .p-Urgent{background:#991b1b;color:#fff}.p-High{background:#fecaca;color:#7f1d1d}
+  .p-Medium{background:#e5e7eb;color:#374151}.p-Low{background:#f3f4f6;color:#6b7280}
+  pre{white-space:pre-wrap;word-break:break-word}
+</style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+<div class="flex min-h-screen">
+  <aside class="w-60 bg-slate-900 text-slate-200 flex-shrink-0 hidden md:block">
+    <div class="p-5 border-b border-slate-700">
+      <div class="text-lg font-bold text-white">🚀 {{ config.AGENCY_NAME }}</div>
+      <div class="text-xs text-slate-400">Boss Command Center</div>
+    </div>
+    <nav class="p-3 space-y-1 text-sm">
+      {% set items = [("home","/boss","🏠 Overview"),("employees","/boss/employees","👥 Employees"),("assign","/boss/assign","➕ Assign Task"),
+                      ("board","/boss/board","📋 Live Task Board"),("reports","/boss/reports","📊 Reports"),("chat","/boss/chat","💬 Chat"),
+                      ("leads","/boss/leads","🎯 Leads"),("posts","/boss/posts","📣 Posts"),("tickets","/boss/tickets","🛟 Tickets"),
+                      ("system","/boss/system","⚙️ System")] %}
+      {% for key, href, text in items %}
+        <a href="{{ href }}" class="block px-3 py-2 rounded {{ 'bg-indigo-600 text-white' if active==key else 'hover:bg-slate-800' }}">{{ text }}</a>
+      {% endfor %}
+      {% if config.SHEET_URL %}<a href="{{ config.SHEET_URL }}" target="_blank" class="block px-3 py-2 rounded hover:bg-slate-800">📗 Google Sheet ↗</a>{% endif %}
+      <a href="/" target="_blank" class="block px-3 py-2 rounded hover:bg-slate-800">🌐 Public site ↗</a>
+      <a href="/logout" class="block px-3 py-2 rounded hover:bg-slate-800 text-slate-400">↩ Log out</a>
+    </nav>
+  </aside>
+  <main class="flex-1 p-4 md:p-8 overflow-x-auto">
+    <div class="md:hidden mb-4 flex flex-wrap gap-2 text-sm">
+      <a href="/boss" class="underline">Overview</a><a href="/boss/assign" class="underline">Assign</a><a href="/boss/board" class="underline">Board</a>
+      <a href="/boss/reports" class="underline">Reports</a><a href="/boss/chat" class="underline">Chat</a><a href="/boss/employees" class="underline">Employees</a>
+    </div>
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

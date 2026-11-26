@@ -1,0 +1,64 @@
+{% extends "base.html" %}{% block title %}Live Task Board{% endblock %}
+{% macro st(s) %}<span class="badge s-{{ s|replace(' ','') }}">{{ s }}</span>{% endmacro %}
+{% macro pr(p) %}<span class="badge p-{{ p }}">{{ p }}</span>{% endmacro %}
+{% block content %}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <div><h1 class="text-2xl font-bold">Live Task Board</h1>
+  <p class="text-slate-500 text-sm">Every task by every employee · {{ tasks|length }} shown · <label><input type="checkbox" id="live" checked> live refresh (8s)</label></p></div>
+  <div class="flex gap-2 text-sm">
+    <a href="?agent={{ f.agent|urlencode }}&status={{ f.status|urlencode }}&priority={{ f.priority|urlencode }}&day={{ f.day|urlencode }}&view=kanban" class="px-3 py-2 rounded border {{ 'bg-indigo-600 text-white' if view=='kanban' else 'bg-white' }}">Kanban</a>
+    <a href="?agent={{ f.agent|urlencode }}&status={{ f.status|urlencode }}&priority={{ f.priority|urlencode }}&day={{ f.day|urlencode }}&view=table" class="px-3 py-2 rounded border {{ 'bg-indigo-600 text-white' if view=='table' else 'bg-white' }}">Table</a>
+    <form method="post" action="/boss/run-now"><button class="px-3 py-2 rounded border bg-white">⚡ Run agents now</button></form>
+  </div>
+</div>
+<form class="bg-white rounded-xl shadow-sm p-3 mb-4 flex flex-wrap gap-2 text-sm items-end">
+  <input type="hidden" name="view" value="{{ view }}">
+  <label>Employee<br><select name="agent" class="border rounded px-2 py-1"><option value="">All</option>
+    {% for e in TEAM %}<option value="{{ e.key }}" {{ 'selected' if f.agent==e.key }}>{{ e.name }} — {{ e.title }}</option>{% endfor %}</select></label>
+  <label>Status<br><select name="status" class="border rounded px-2 py-1"><option value="">All</option>
+    {% for s in STATUSES %}<option {{ 'selected' if f.status==s }}>{{ s }}</option>{% endfor %}</select></label>
+  <label>Priority<br><select name="priority" class="border rounded px-2 py-1"><option value="">All</option>
+    {% for p in PRIORITIES %}<option {{ 'selected' if f.priority==p }}>{{ p }}</option>{% endfor %}</select></label>
+  <label>Date<br><input type="date" name="day" value="{{ f.day }}" class="border rounded px-2 py-1"></label>
+  <button class="bg-indigo-600 text-white rounded px-4 py-1.5">Filter</button>
+  <a href="/boss/board?view={{ view }}" class="text-slate-500 underline py-1.5">Reset</a>
+</form>
+{% if view == 'table' %}
+<div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+<table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr>
+  <th class="p-2">Task ID</th><th class="p-2">Created</th><th class="p-2">Assigned by</th><th class="p-2">Employee</th><th class="p-2">Title</th>
+  <th class="p-2">Priority</th><th class="p-2">Status</th><th class="p-2">Deadline</th><th class="p-2">Completed</th></tr></thead><tbody>
+{% for t in tasks %}<tr class="border-t hover:bg-slate-50 cursor-pointer" onclick="location='/boss/tasks/{{ t.id }}'">
+  <td class="p-2 font-mono">{{ t.code }}</td><td class="p-2 whitespace-nowrap">{{ fmt(t.created_at) }}</td><td class="p-2">{{ t.assigned_by }}</td>
+  <td class="p-2 whitespace-nowrap">{{ BY_KEY[t.agent].emoji }} {{ BY_KEY[t.agent].name }}</td><td class="p-2">{{ t.title }}</td>
+  <td class="p-2">{{ pr(t.priority) }}</td><td class="p-2">{{ st(t.status) }}</td><td class="p-2 whitespace-nowrap">{{ fmt(t.deadline) }}</td>
+  <td class="p-2 whitespace-nowrap">{{ fmt(t.completed_at) }}</td></tr>
+{% else %}<tr><td colspan="9" class="p-6 text-center text-slate-400">No tasks match.</td></tr>{% endfor %}
+</tbody></table></div>
+{% else %}
+<div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+{% for s, items in columns.items() %}
+  <div class="bg-slate-200/60 rounded-xl p-3">
+    <div class="flex justify-between mb-2"><span class="font-semibold">{{ st(s) }}</span><span class="text-sm text-slate-500">{{ items|length }}</span></div>
+    <div class="space-y-2 max-h-[70vh] overflow-y-auto">
+    {% for t in items %}
+      <a href="/boss/tasks/{{ t.id }}" class="block bg-white rounded-lg p-3 shadow-sm hover:ring-2 ring-indigo-300">
+        <div class="flex justify-between text-xs text-slate-500"><span class="font-mono">{{ t.code }}</span>{{ pr(t.priority) }}</div>
+        <div class="text-sm font-medium mt-1">{{ t.title }}</div>
+        <div class="text-xs text-slate-500 mt-1">{{ BY_KEY[t.agent].emoji }} {{ BY_KEY[t.agent].name }} · by {{ t.assigned_by }}</div>
+        {% if t.status == 'Blocked' %}<div class="text-xs text-red-700 mt-1">⛔ {{ t.blocked_reason[:120] }}</div>{% endif %}
+        <div class="text-[11px] text-slate-400 mt-1">{{ fmt(t.completed_at or t.started_at or t.created_at) }}{% if t.deadline %} · due {{ fmt(t.deadline) }}{% endif %}</div>
+      </a>
+    {% endfor %}
+    </div>
+  </div>
+{% endfor %}
+</div>
+{% endif %}
+<script>
+const live=document.getElementById('live');
+live.checked = localStorage.getItem('live') !== '0';
+live.onchange=()=>{try{localStorage.setItem('live', live.checked?'1':'0')}catch(e){}};
+setInterval(()=>{ if(live.checked) location.reload(); }, 8000);
+</script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+  <div><h1 class="text-2xl font-bold">Reports</h1><p class="text-slate-500 text-sm">Generated {{ daily.generated }} from the live ledger</p></div>
+  <div class="flex flex-wrap gap-2 text-sm">
+    <a class="bg-indigo-600 text-white rounded px-3 py-2" href="/boss/reports/export.pdf?period=daily">⬇ Daily PDF</a>
+    <a class="bg-indigo-600 text-white rounded px-3 py-2" href="/boss/reports/export.pdf?period=weekly">⬇ Weekly PDF</a>
+    {% for k in ['tasks','employees','leads','posts','tickets'] %}<a class="bg-white border rounded px-3 py-2" href="/boss/reports/export.csv?kind={{ k }}">⬇ {{ k|title }} CSV</a>{% endfor %}
+  </div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-4 mb-6">
+{% for s in [daily, weekly] %}
+  <div class="bg-white rounded-xl shadow-sm p-5">
+    <h2 class="font-semibold mb-3">{{ 'Today' if s.period=='daily' else 'Last 7 days' }} — agency summary</h2>
+    <div class="grid grid-cols-3 gap-3 text-center">
+      <div><div class="text-2xl font-bold">{{ s.tasks_completed }}</div><div class="text-xs text-slate-500">tasks completed</div></div>
+      <div><div class="text-2xl font-bold">{{ s.leads }}</div><div class="text-xs text-slate-500">leads generated</div></div>
+      <div><div class="text-2xl font-bold">{{ s.posts_published }}</div><div class="text-xs text-slate-500">posts published</div></div>
+      <div><div class="text-2xl font-bold">{{ s.tickets.received }}</div><div class="text-xs text-slate-500">tickets received</div></div>
+      <div><div class="text-2xl font-bold">{{ s.tickets.resolved }}</div><div class="text-xs text-slate-500">tickets resolved</div></div>
+      <div><div class="text-2xl font-bold">{{ s.tickets.escalated }}</div><div class="text-xs text-slate-500">escalated</div></div>
+    </div>
+    <div class="text-xs text-slate-500 mt-3">Tasks created {{ s.tasks_created }} · drafts ready {{ s.drafts_ready }} · platforms {{ s.posts_by_platform or '—' }}</div>
+  </div>
+{% endfor %}
+</div>
+
+<div class="grid lg:grid-cols-2 gap-4 mb-6">
+  <div class="bg-white rounded-xl shadow-sm p-5"><h3 class="font-semibold mb-2">Output per day (7 days)</h3><canvas id="c1" height="170"></canvas></div>
+  <div class="bg-white rounded-xl shadow-sm p-5"><h3 class="font-semibold mb-2">Tasks completed per employee (7 days)</h3><canvas id="c2" height="170"></canvas></div>
+  <div class="bg-white rounded-xl shadow-sm p-5"><h3 class="font-semibold mb-2">Posts by platform (all time)</h3><canvas id="c3" height="170"></canvas></div>
+  <div class="bg-white rounded-xl shadow-sm p-5"><h3 class="font-semibold mb-2">Support tickets by status</h3><canvas id="c4" height="170"></canvas></div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm p-5 mb-6 overflow-x-auto">
+  <h2 class="font-semibold mb-3">Per-employee report</h2>
+  <table class="w-full text-sm"><thead class="bg-slate-50 text-left"><tr><th class="p-2">Employee</th><th class="p-2">Done today</th>
+    <th class="p-2">Done 7d</th><th class="p-2">Pending</th><th class="p-2">Blocked</th><th class="p-2">Avg completion</th><th class="p-2">KPI today</th><th class="p-2">KPI 7d</th></tr></thead><tbody>
+  {% for e in daily.employees %}{% set w = weekly_stats[loop.index0] %}
+    <tr class="border-t"><td class="p-2">{{ e.emoji }} <b>{{ e.name }}</b> <span class="text-slate-500">{{ e.title }}</span></td>
+    <td class="p-2">{{ e.completed }}</td><td class="p-2">{{ w.completed }}</td><td class="p-2">{{ e.pending }}</td><td class="p-2">{{ e.blocked }}</td>
+    <td class="p-2">{{ (w.avg_minutes|string + ' min') if w.avg_minutes is not none else '—' }}</td>
+    <td class="p-2">{{ e.kpi_label }}: <b>{{ e.kpi_value }}</b></td><td class="p-2">{{ w.kpi_value }}</td></tr>
+  {% endfor %}</tbody></table>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-4 mb-6">
+  <div class="bg-white rounded-xl shadow-sm p-5 overflow-x-auto">
+    <h2 class="font-semibold mb-3">🎯 Sales — leads generated today ({{ leads|length }})</h2>
+    <table class="w-full text-sm"><thead class="text-left bg-slate-50"><tr><th class="p-2">Name</th><th class="p-2">Category</th><th class="p-2">Source</th><th class="p-2">Status</th><th class="p-2">Score</th></tr></thead><tbody>
+    {% for l in leads %}<tr class="border-t"><td class="p-2">{{ l.name }}</td><td class="p-2">{{ l.category }}</td><td class="p-2">{{ l.source }}</td><td class="p-2">{{ l.status }}</td><td class="p-2">{{ l.score }}</td></tr>
+    {% else %}<tr><td colspan="5" class="p-3 text-slate-400">No leads yet today.</td></tr>{% endfor %}</tbody></table>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm p-5 overflow-x-auto">
+    <h2 class="font-semibold mb-3">📣 Content — posts published today ({{ posts_today|length }})</h2>
+    <table class="w-full text-sm"><thead class="text-left bg-slate-50"><tr><th class="p-2">Title</th><th class="p-2">Platform</th><th class="p-2">Time</th><th class="p-2">Link</th></tr></thead><tbody>
+    {% for p in posts_today %}<tr class="border-t"><td class="p-2">{{ p.title }}</td><td class="p-2">{{ p.published_on }}</td><td class="p-2">{{ fmt(p.published_at) }}</td><td class="p-2"><a class="underline text-indigo-700" target="_blank" href="{{ p.link }}">open</a></td></tr>
+    {% else %}<tr><td colspan="4" class="p-3 text-slate-400">Nothing published yet today.</td></tr>{% endfor %}</tbody></table>
+  </div>
+</div>
+{% if last_report %}<div class="bg-white rounded-xl shadow-sm p-5"><h2 class="font-semibold mb-2">📊 Latest report by Lens ({{ last_report.for_date }})</h2><pre class="text-sm">{{ last_report.content }}</pre></div>{% endif %}
+
+<script>
+const S = {{ series|tojson }};
+const L = S.map(x=>x.date.slice(5));
+new Chart(c1,{type:'line',data:{labels:L,datasets:[
+  {label:'Tasks completed',data:S.map(x=>x.completed),borderColor:'#4f46e5',tension:.3},
+  {label:'Leads',data:S.map(x=>x.leads),borderColor:'#0ea5e9',tension:.3},
+  {label:'Posts published',data:S.map(x=>x.posts),borderColor:'#c026d3',tension:.3},
+  {label:'Tickets',data:S.map(x=>x.tickets),borderColor:'#f59e0b',tension:.3}]},options:{scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+const W = {{ weekly_stats|map(attribute='completed')|list|tojson }};
+const N = {{ weekly_stats|map(attribute='name')|list|tojson }};
+new Chart(c2,{type:'bar',data:{labels:N,datasets:[{label:'Completed (7d)',data:W,backgroundColor:'#6366f1'}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+const P = {{ platforms|tojson }};
+new Chart(c3,{type:'doughnut',data:{labels:Object.keys(P).length?Object.keys(P):['none yet'],datasets:[{data:Object.keys(P).length?Object.values(P):[1],backgroundColor:['#0ea5e9','#c026d3','#10b981','#cbd5e1']}]}});
+const T = {{ tickets|tojson }};
+new Chart(c4,{type:'bar',data:{labels:Object.keys(T),datasets:[{label:'Tickets',data:Object.values(T),backgroundColor:['#f59e0b','#10b981','#ef4444']}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+</script>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% block title %}{{ t.code }}{% endblock %}
+{% block content %}
+<a href="/boss/board" class="text-sm text-indigo-700">← Task Board</a>
+<div class="bg-white rounded-xl shadow-sm p-6 mt-3">
+  <div class="flex flex-wrap justify-between gap-2">
+    <div><div class="font-mono text-slate-500">{{ t.code }}</div><h1 class="text-2xl font-bold">{{ t.title }}</h1></div>
+    <div class="flex gap-2 items-start">
+      <span class="badge p-{{ t.priority }}">{{ t.priority }}</span>
+      <span class="badge s-{{ t.status|replace(' ','') }} text-base" id="status">{{ t.status }}</span>
+    </div>
+  </div>
+  <div class="grid sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4 text-sm">
+    <div><div class="text-xs text-slate-500">Employee</div>{{ BY_KEY[t.agent].emoji }} {{ label(t.agent) }}</div>
+    <div><div class="text-xs text-slate-500">Assigned by</div>{{ t.assigned_by }}</div>
+    <div><div class="text-xs text-slate-500">Created</div>{{ fmt(t.created_at) }}</div>
+    <div><div class="text-xs text-slate-500">Started</div>{{ fmt(t.started_at) or '—' }}</div>
+    <div><div class="text-xs text-slate-500">Completed</div>{{ fmt(t.completed_at) or '—' }}</div>
+    <div><div class="text-xs text-slate-500">Deadline</div>{{ fmt(t.deadline) or '—' }}</div>
+  </div>
+  {% if t.description %}<div class="mt-4"><div class="text-xs text-slate-500">Description</div><pre class="text-sm">{{ t.description }}</pre></div>{% endif %}
+  {% if t.status == 'Blocked' %}<div class="mt-4 bg-red-50 text-red-800 p-3 rounded text-sm">⛔ <b>Blocked:</b> {{ t.blocked_reason }}</div>{% endif %}
+  {% if t.status in ('Blocked','Completed') %}
+  <form method="post" action="/boss/tasks/{{ t.id }}/retry" class="mt-3"><button class="text-sm border rounded px-3 py-1">↻ Re-run this task</button></form>{% endif %}
+  {% if t.status in ('Queued','In Progress') %}<p class="mt-4 text-sm text-amber-700">⏳ The employee is on it — this page refreshes automatically.</p>
+  <script>setTimeout(()=>location.reload(), 5000)</script>{% endif %}
+</div>
+{% if t.output or t.output_link %}
+<div class="bg-white rounded-xl shadow-sm p-6 mt-4">
+  <h2 class="font-semibold mb-2">📦 Output</h2>
+  {% if t.output_link %}<a href="{{ t.output_link }}" target="_blank" class="text-indigo-700 underline text-sm">{{ t.output_link }}</a>{% endif %}
+  <pre class="text-sm mt-2">{{ t.output }}</pre>
+</div>{% endif %}
+{% if children %}
+<div class="bg-white rounded-xl shadow-sm p-6 mt-4"><h2 class="font-semibold mb-2">🔗 Sub-tasks / follow-ups</h2>
+{% for c in children %}<div class="text-sm"><a class="underline text-indigo-700" href="/boss/tasks/{{ c.id }}">{{ c.code }}</a> {{ BY_KEY[c.agent].name }} — {{ c.title }} · <span class="badge s-{{ c.status|replace(' ','') }}">{{ c.status }}</span></div>{% endfor %}
+</div>{% endif %}
+{% if council %}
+<div class="bg-white rounded-xl shadow-sm p-6 mt-4">
+  <h2 class="font-semibold">🏛️ LLM Council — how the best version was chosen</h2>
+  <p class="text-xs text-slate-500 mb-3">Stage 1: models answer independently · Stage 2: anonymous peer ranking · Stage 3: chairman ({{ council.chairman }}) writes the final version.</p>
+  {% if council.aggregate %}<div class="text-sm mb-3"><b>Aggregate ranking:</b>
+    {% for a in council.aggregate %}#{{ loop.index }} Response {{ a.label }} ({{ a.model }}, avg rank {{ '%.1f'|format(a.avg_rank) if a.avg_rank < 99 else 'n/a' }}){{ ', ' if not loop.last }}{% endfor %}</div>{% endif %}
+  <div class="grid lg:grid-cols-3 gap-3">
+  {% for s in council.stage1 %}<details class="border rounded p-2 text-sm"><summary class="cursor-pointer font-medium">Stage 1 · {{ s.model }}{% if s.error %} ⚠️{% endif %}</summary><pre class="text-xs mt-2">{{ s.text or s.error }}</pre></details>{% endfor %}
+  </div>
+  {% for s in council.stage2 %}<details class="border rounded p-2 text-sm mt-2"><summary class="cursor-pointer">Stage 2 · {{ s.model }} ranked: {{ s.ranking|join(' > ') }}</summary><pre class="text-xs mt-2">{{ s.text or s.error }}</pre></details>{% endfor %}
+  <details class="border rounded p-2 text-sm mt-2" open><summary class="cursor-pointer font-medium">Stage 3 · Final (chairman)</summary><pre class="text-xs mt-2">{{ council.final }}</pre></details>
+</div>{% endif %}
+{% endblock %}

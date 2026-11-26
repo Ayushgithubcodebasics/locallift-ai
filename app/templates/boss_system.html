@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% block title %}System{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-4">⚙️ System & integrations</h1>
+{% if request.query_params.get('email') %}<div class="bg-indigo-50 p-3 rounded mb-4 text-sm">Daily email: <b>{{ request.query_params.get('email') }}</b></div>{% endif %}
+<div class="grid lg:grid-cols-2 gap-4">
+  <div class="bg-white rounded-xl shadow-sm p-5 text-sm space-y-1">
+    <h2 class="font-semibold mb-2">Configured integrations</h2>
+    {% for k, v in integrations.items() %}<div class="flex justify-between border-b py-1"><span>{{ k }}</span><span>{{ v if v is string else ('✅ connected' if v else '— not set') }}</span></div>{% endfor %}
+    <div class="flex justify-between py-1"><span>LLM router</span><span>{{ router }}</span></div>
+    <div class="flex justify-between py-1"><span>LLM calls / errors (since restart)</span><span>{{ stats.calls }} / {{ stats.errors }}</span></div>
+    <div class="text-xs text-slate-500">{{ stats.by_model }}</div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm p-5 text-sm space-y-3">
+    <h2 class="font-semibold">Tests & manual controls</h2>
+    <a href="/boss/system?test=llm" class="block border rounded px-3 py-2">🧪 Test every LLM model (takes ~20s)</a>
+    <a href="/boss/system?test=sheet" class="block border rounded px-3 py-2">🧪 Test Google Sheet / Apps Script connection</a>
+    <form method="post" action="/boss/send-email-now"><button class="w-full text-left border rounded px-3 py-2">📧 Send the daily email now</button></form>
+    <form method="post" action="/boss/run-now"><button class="w-full text-left border rounded px-3 py-2">⚡ Run one agent heartbeat now</button></form>
+    {% if sheet %}<div class="bg-slate-50 p-2 rounded">{{ sheet }}</div>{% endif %}
+    {% if llm_health %}<div class="bg-slate-50 p-2 rounded space-y-1">{% for k, v in llm_health.items() %}<div><b>{{ k }}</b>: {{ v }}</div>{% endfor %}</div>{% endif %}
+  </div>
+</div>
+<div class="bg-white rounded-xl shadow-sm p-5 mt-4 text-sm">
+  <h2 class="font-semibold mb-2">Architecture</h2>
+  <p>Render (FastAPI web service) · Neon Postgres (ledger of record) · Google Sheet mirror + Gmail via Apps Script · GitHub Actions heartbeat every 10 min ·
+  LiteLLM router → Gemini / OpenRouter (/ Groq / OpenJarvis) · LLM Council for client-facing output · Apify Google Maps scraper · Telegram channel.</p>
+</div>
+{% endblock %}

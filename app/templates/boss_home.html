@@ -1,0 +1,48 @@
+{% extends "base.html" %}{% block title %}Overview{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+  <div><h1 class="text-2xl font-bold">Good day, Boss 👋</h1>
+  <p class="text-slate-500 text-sm">Your agency runs itself. Live numbers from the ledger · {{ summary.generated }}</p></div>
+  <div class="flex gap-2">
+    <a href="/boss/assign" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">➕ Assign task</a>
+    <form method="post" action="/boss/run-now"><button class="bg-white border px-4 py-2 rounded-lg text-sm">⚡ Run agents now</button></form>
+  </div>
+</div>
+<div class="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
+  {% for label_, val, color in [("In progress", counts["In Progress"], "amber"), ("Queued", counts["Queued"], "indigo"),
+     ("Blocked", counts["Blocked"], "red"), ("Done today", summary.tasks_completed, "green"),
+     ("Leads today", summary.leads, "sky"), ("Posts today", summary.posts_published, "fuchsia")] %}
+  <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-{{color}}-500">
+    <div class="text-xs text-slate-500">{{ label_ }}</div><div class="text-2xl font-bold">{{ val }}</div>
+  </div>{% endfor %}
+</div>
+<div class="grid lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2">
+    <h2 class="font-semibold mb-3">Team today</h2>
+    <div class="grid sm:grid-cols-2 gap-3">
+      {% for e in summary.employees %}
+      <a href="/boss/chat/{{ e.key }}" class="bg-white rounded-xl p-4 shadow-sm hover:ring-2 ring-indigo-300 block">
+        <div class="flex justify-between"><div class="font-semibold">{{ e.emoji }} {{ e.name }}</div>
+        <span class="badge {{ 's-InProgress' if e.active else 's-Queued' }}">{{ 'ACTIVE' if e.active else 'idle' }}</span></div>
+        <div class="text-xs text-slate-500">{{ e.title }}</div>
+        <div class="text-sm mt-2">{{ e.kpi_label }}: <b>{{ e.kpi_value }}</b> · done {{ e.completed }} · pending {{ e.pending }}</div>
+      </a>{% endfor %}
+    </div>
+  </div>
+  <div>
+    <h2 class="font-semibold mb-3">Live activity</h2>
+    <div class="bg-white rounded-xl shadow-sm divide-y text-sm max-h-[520px] overflow-y-auto">
+      {% for a in activity %}
+      <div class="p-3 {{ 'bg-red-50' if a.level=='error' else ('bg-amber-50' if a.level=='flag' else '') }}">
+        <div class="text-xs text-slate-400">{{ fmt(a.created_at) }} · {{ BY_KEY[a.agent].name if a.agent in BY_KEY else a.agent }}</div>
+        <div>{{ a.message[:220] }}</div></div>
+      {% else %}<div class="p-4 text-slate-400">No activity yet — the first heartbeat creates today's plan.</div>{% endfor %}
+    </div>
+    <h2 class="font-semibold mt-6 mb-2">Integrations</h2>
+    <div class="bg-white rounded-xl shadow-sm p-3 text-sm space-y-1">
+      {% for k, v in integrations.items() %}<div class="flex justify-between"><span>{{ k }}</span><span>{{ v if v is string else ('✅' if v else '—') }}</span></div>{% endfor %}
+    </div>
+  </div>
+</div>
+<script>setTimeout(()=>location.reload(), 30000)</script>
+{% endblock %}

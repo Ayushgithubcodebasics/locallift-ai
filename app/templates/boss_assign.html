@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% block title %}Assign Task{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-1">Assign a task</h1>
+<p class="text-slate-500 text-sm mb-6">Give it to the Project Manager (Atlas breaks it down and delegates) or directly to any employee. It is logged in the Google Sheet instantly.</p>
+<form method="post" action="/boss/assign" class="bg-white rounded-xl shadow-sm p-6 max-w-2xl space-y-4">
+  <label class="block text-sm font-medium">Title
+    <input name="title" required maxlength="280" class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="e.g. Find 10 bakeries in Riga without a website"></label>
+  <label class="block text-sm font-medium">Description
+    <textarea name="description" rows="5" class="mt-1 w-full border rounded-lg px-3 py-2" placeholder="Details, context, expected output…"></textarea></label>
+  <div class="grid sm:grid-cols-3 gap-4">
+    <label class="block text-sm font-medium">Assign to
+      <select name="agent" class="mt-1 w-full border rounded-lg px-3 py-2">
+        {% for e in TEAM %}<option value="{{ e.key }}" {{ 'selected' if preset==e.key }}>{{ e.emoji }} {{ e.name }} — {{ e.title }}</option>{% endfor %}
+      </select></label>
+    <label class="block text-sm font-medium">Priority
+      <select name="priority" class="mt-1 w-full border rounded-lg px-3 py-2">
+        {% for p in PRIORITIES %}<option {{ 'selected' if p=='Medium' }}>{{ p }}</option>{% endfor %}</select></label>
+    <label class="block text-sm font-medium">Deadline
+      <input type="datetime-local" name="deadline" class="mt-1 w-full border rounded-lg px-3 py-2"></label>
+  </div>
+  <button class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-6 py-2 font-semibold">🚀 Assign task</button>
+</form>
+<div class="max-w-2xl mt-6 text-sm text-slate-600 bg-white rounded-xl p-4">
+  <b>Tips</b><ul class="list-disc ml-5 mt-1 space-y-1">
+  <li><b>Scout</b>: put <code>query: florists in Riga Latvia</code> in the description to scrape that search on Google Maps.</li>
+  <li><b>Quill</b>: "Write 3 LinkedIn posts about our new service" → posts are QA'd by Sentinel and published by Echo automatically.</li>
+  <li><b>Atlas</b>: give a goal ("Launch a campaign for dentists") and he delegates sub-tasks to the team.</li></ul>
+</div>
+{% endblock %}

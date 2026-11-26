@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Boss Login · {{ config.AGENCY_NAME }}</title><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 to-indigo-900 flex items-center justify-center p-4">
+<form method="post" action="/login" class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm space-y-4">
+  <div class="text-center">
+    <div class="text-3xl">🚀</div>
+    <h1 class="text-xl font-bold">{{ config.AGENCY_NAME }}</h1>
+    <p class="text-sm text-slate-500">Boss Command Center — authorised access only</p>
+  </div>
+  {% if error %}<div class="bg-red-50 text-red-700 text-sm p-2 rounded">{{ error }}</div>{% endif %}
+  <input name="username" placeholder="Username" required class="w-full border rounded-lg px-3 py-2">
+  <input name="password" type="password" placeholder="Password" required class="w-full border rounded-lg px-3 py-2">
+  <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-2 font-semibold">Sign in</button>
+  <p class="text-center text-xs"><a href="/" class="text-indigo-600">← Back to website</a></p>
+</form>
+</body></html>

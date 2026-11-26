@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ config.AGENCY_NAME }} — Growth on autopilot for local businesses in Riga</title>
+<script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-white text-slate-800">
+<header class="max-w-6xl mx-auto flex justify-between items-center p-5">
+  <div class="text-xl font-bold">🚀 {{ config.AGENCY_NAME }}</div>
+  <nav class="flex gap-5 text-sm"><a href="#services">Services</a><a href="/blog">Blog</a><a href="#contact">Contact</a><a href="/login" class="text-indigo-600 font-semibold">Boss login</a></nav>
+</header>
+<section class="bg-gradient-to-br from-indigo-700 to-slate-900 text-white">
+  <div class="max-w-6xl mx-auto px-5 py-20 grid md:grid-cols-2 gap-10 items-center">
+    <div>
+      <h1 class="text-4xl md:text-5xl font-extrabold leading-tight">More customers for your café, salon or clinic — run by AI, 24/7.</h1>
+      <p class="mt-4 text-indigo-100 text-lg">LocalLift AI is an autonomous growth agency. Eight AI employees find new customers, write and publish your posts, and answer your enquiries — every day, automatically.</p>
+      <a href="#contact" class="inline-block mt-6 bg-white text-indigo-700 font-semibold rounded-lg px-6 py-3">Get the Growth Starter Pack — €99/month</a>
+    </div>
+    <div class="bg-white/10 rounded-2xl p-6 text-sm space-y-2">
+      {% for e in TEAM %}<div class="flex gap-3"><span class="text-xl">{{ e.emoji }}</span><div><b>{{ e.name }}</b> · {{ e.title }}</div></div>{% endfor %}
+    </div>
+  </div>
+</section>
+<section id="services" class="max-w-6xl mx-auto px-5 py-16 grid md:grid-cols-4 gap-6">
+  {% for icon, t, d in [("🔎","Lead discovery","We scan Google Maps daily to find businesses and partners who need you."),
+                        ("✍️","Content that sounds like you","Three posts a week, written by an AI council that picks the best version."),
+                        ("📣","Auto-publishing","Posts go live on your channels at the right time — no effort from you."),
+                        ("🛟","Instant customer replies","Every enquiry gets a helpful answer within minutes; tricky ones go to you.")] %}
+  <div class="rounded-xl border p-6"><div class="text-3xl">{{ icon }}</div><h3 class="font-semibold mt-2">{{ t }}</h3><p class="text-sm text-slate-600 mt-1">{{ d }}</p></div>
+  {% endfor %}
+</section>
+{% if posts %}<section class="bg-slate-50"><div class="max-w-6xl mx-auto px-5 py-12">
+  <h2 class="text-2xl font-bold mb-4">Latest from our blog</h2>
+  <div class="grid md:grid-cols-3 gap-4">{% for p in posts %}
+    <a href="/blog/{{ p.id }}" class="bg-white rounded-xl p-5 shadow-sm block"><div class="text-xs text-slate-500">{{ fmt(p.published_at, False) }}</div>
+    <div class="font-semibold mt-1">{{ p.title }}</div><div class="text-sm text-slate-600 mt-2">{{ p.body[:140] }}…</div></a>{% endfor %}</div>
+</div></section>{% endif %}
+<section id="contact" class="max-w-3xl mx-auto px-5 py-16">
+  <h2 class="text-2xl font-bold">Contact us</h2>
+  <p class="text-slate-600 text-sm mb-4">Questions about pricing, a partnership, or need help? Haven, our support agent, replies by email within minutes.</p>
+  {% if sent %}<div class="bg-green-50 text-green-800 p-4 rounded mb-4">✅ Thanks! Your message became a support ticket — check your inbox for Haven's reply.</div>{% endif %}
+  <form method="post" action="/contact" class="grid gap-3">
+    <div class="grid sm:grid-cols-2 gap-3"><input name="name" required placeholder="Your name" class="border rounded-lg px-3 py-2">
+      <input name="email" type="email" required placeholder="Your email" class="border rounded-lg px-3 py-2"></div>
+    <input name="subject" placeholder="Subject" class="border rounded-lg px-3 py-2">
+    <textarea name="message" required rows="5" placeholder="How can we help?" class="border rounded-lg px-3 py-2"></textarea>
+    <button class="bg-indigo-600 text-white rounded-lg py-3 font-semibold">Send message</button>
+  </form>
+</section>
+<footer class="text-center text-xs text-slate-400 py-8">© {{ config.AGENCY_NAME }} · Riga, Latvia · An autonomous AI agency (course project)</footer>
+</body></html>
